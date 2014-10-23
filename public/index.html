@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	</head>
+	<body>
+		<script src="../build/javascript/tsxkp.js"></script>
+		<script>
+			var config = new TSXKP.Configs.AppleID();
+
+			config.case_transform = TSXKP.Configs.CaseTransform.Capitalise;
+
+			var loader = new TSXKP.Dictionaries.Loaders.SampleLoader(config);
+			var generator = new TSXKP.Generator(loader, config);
+		</script>
+	</body>
+</html>

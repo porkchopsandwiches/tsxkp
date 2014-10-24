@@ -15,9 +15,6 @@ module TSXKP {
             public padding_characters_before: number                    = 1;
             public padding_characters_after: number                     = 1;
             public case_transform: CaseTransform                        = CaseTransform.Random;
-            public random_function: IRandomGenerator                    = RandomGenerator;
-            public random_increment_type: RandomIncrement               = RandomIncrement.Specific;
-            public random_increment: number                             = 12;
             public character_substitutions: CharacterSubstitutions      = {};
         }
     }

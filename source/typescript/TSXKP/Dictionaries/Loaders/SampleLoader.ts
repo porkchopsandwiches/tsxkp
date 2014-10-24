@@ -1456,7 +1456,7 @@ module TSXKP {
                             }
                         }
 
-                        this.cache = new TSXKP.Dictionaries.Dictionary(words, this.config);
+                        this.cache = new TSXKP.Dictionaries.Dictionary(words);
                     }
 
                     callback(undefined, this.cache);

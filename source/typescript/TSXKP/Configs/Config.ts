@@ -68,12 +68,10 @@ module TSXKP {
             padding_type: PaddingType;
             padding_character_type: PaddingCharacterType;
             padding_character?: string;
-            padding_characters_before: number;
-            padding_characters_after: number;
+            padding_characters_before?: number;
+            padding_characters_after?: number;
+            pad_to_length?: number;
             case_transform: CaseTransform;
-            random_function: IRandomGenerator;
-            random_increment_type: RandomIncrement;
-            random_increment?: number;
             character_substitutions: CharacterSubstitutions;
         }
     }

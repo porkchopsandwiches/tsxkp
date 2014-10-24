@@ -16,9 +16,6 @@ var TSXKP;
                 this.padding_characters_before = 1;
                 this.padding_characters_after = 1;
                 this.case_transform = 6 /* Random */;
-                this.random_function = Configs.RandomGenerator;
-                this.random_increment_type = 1 /* Specific */;
-                this.random_increment = 12;
                 this.character_substitutions = {};
             }
             return AppleID;
@@ -100,12 +97,37 @@ var TSXKP;
 var TSXKP;
 (function (TSXKP) {
     (function (Configs) {
+        var SimpleAppleID = (function () {
+            function SimpleAppleID() {
+                this.symbol_alphabet = Configs.SymbolAlphabets.AppleID;
+                this.separator_alphabet = Configs.SeparatorAlphabets.AppleID;
+                this.word_length_min = 4;
+                this.word_length_max = 8;
+                this.num_words = 3;
+                this.separator_character_type = 0 /* None */;
+                this.padding_digits_before = 0;
+                this.padding_digits_after = 2;
+                this.padding_type = 0 /* None */;
+                this.padding_character_type = 0 /* None */;
+                this.case_transform = 3 /* Capitalise */;
+                this.character_substitutions = {};
+            }
+            return SimpleAppleID;
+        })();
+        Configs.SimpleAppleID = SimpleAppleID;
+    })(TSXKP.Configs || (TSXKP.Configs = {}));
+    var Configs = TSXKP.Configs;
+})(TSXKP || (TSXKP = {}));
+var TSXKP;
+(function (TSXKP) {
+    (function (Configs) {
         var SymbolAlphabets = (function () {
             function SymbolAlphabets() {
             }
             SymbolAlphabets.Full = ["!", "@", "$", "%", "^", "&", "*", "-", "_", "+", "=", ":", "|", "~", "?"];
             SymbolAlphabets.Small = ["!", "@", "$", "%", "^", "&", "*", "+", "=", ":", "|", "~", "?"];
             SymbolAlphabets.AppleID = ["!", "?", "@", "&"];
+            SymbolAlphabets.Numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
             return SymbolAlphabets;
         })();
         Configs.SymbolAlphabets = SymbolAlphabets;
@@ -114,21 +136,50 @@ var TSXKP;
 })(TSXKP || (TSXKP = {}));
 var TSXKP;
 (function (TSXKP) {
+    (function (Configs) {
+        var WPA2 = (function () {
+            function WPA2() {
+                this.symbol_alphabet = Configs.SymbolAlphabets.Small;
+                this.separator_alphabet = Configs.SeparatorAlphabets.Standard;
+                this.word_length_min = 4;
+                this.word_length_max = 8;
+                this.num_words = 6;
+                this.separator_character_type = 1 /* Random */;
+                this.padding_digits_before = 4;
+                this.padding_digits_after = 4;
+                this.padding_type = 2 /* Adaptive */;
+                this.padding_character_type = 1 /* Random */;
+                this.pad_to_length = 63;
+                this.case_transform = 6 /* Random */;
+                this.character_substitutions = {};
+            }
+            return WPA2;
+        })();
+        Configs.WPA2 = WPA2;
+    })(TSXKP.Configs || (TSXKP.Configs = {}));
+    var Configs = TSXKP.Configs;
+})(TSXKP || (TSXKP = {}));
+var TSXKP;
+(function (TSXKP) {
     (function (Dictionaries) {
         var Dictionary = (function () {
-            function Dictionary(words, config) {
+            function Dictionary(words) {
                 this.words = words;
                 this.length = words.length;
-                this.config = config;
             }
             Dictionary.prototype.get = function (index) {
                 return this.words[index];
             };
 
-            Dictionary.prototype.random = function () {
-                var random;
-                random = this.config.random_function(1);
-                return this.words[Math.floor(random[0] * this.length)];
+            Dictionary.prototype.random = function (count) {
+                var chosen;
+                var i;
+
+                for (chosen = [], i = 0; i < count; ++i) {
+                    chosen.push(TSXKP.Generator.getRandomArrayElement(this.words));
+                }
+
+                return chosen;
             };
             return Dictionary;
         })();
@@ -1589,7 +1640,7 @@ var TSXKP;
                             }
                         }
 
-                        this.cache = new TSXKP.Dictionaries.Dictionary(words, this.config);
+                        this.cache = new TSXKP.Dictionaries.Dictionary(words);
                     }
 
                     callback(undefined, this.cache);
@@ -1606,24 +1657,27 @@ var TSXKP;
 })(TSXKP || (TSXKP = {}));
 var TSXKP;
 (function (TSXKP) {
+    
+
+    
+
     var Generator = (function () {
         function Generator(loader, config) {
             this.config = config;
             this.loader = loader;
         }
-        Generator.prototype.getRandomArrayElement = function (array) {
+        Generator.getRandomArrayElement = function (array) {
             return array[Math.floor(Math.random() * array.length)];
         };
 
-        Generator.prototype.randomWords = function (count, dictionary) {
-            var chosen;
-            chosen = [];
-
-            while (chosen.length < count) {
-                chosen.push(dictionary.random());
+        Generator.prototype.getRandomDigits = function (length) {
+            var digits;
+            var i;
+            for (digits = [], i = 0; i < length; ++i) {
+                digits.push(Generator.getRandomArrayElement(TSXKP.Configs.SymbolAlphabets.Numbers));
             }
 
-            return chosen;
+            return digits.join("");
         };
 
         Generator.prototype.transformWordCase = function (word, case_transform) {
@@ -1641,12 +1695,13 @@ var TSXKP;
             }
         };
 
-        Generator.prototype.transformCase = function (words) {
+        Generator.prototype.transformCase = function (words, case_transform) {
+            if (typeof case_transform === "undefined") { case_transform = this.config.case_transform; }
             var i;
             var l;
 
             for (i = 0, l = words.length; i < l; ++i) {
-                switch (this.config.case_transform) {
+                switch (case_transform) {
                     case 5 /* Alternate */:
                         words[i] = this.transformWordCase(words[i], i % 2 === 0 ? 2 /* Lower */ : 1 /* Upper */);
                         break;
@@ -1662,26 +1717,28 @@ var TSXKP;
             return words;
         };
 
-        Generator.prototype.getSeparator = function () {
-            switch (this.config.separator_character_type) {
+        Generator.prototype.getSeparator = function (separator_character_type) {
+            if (typeof separator_character_type === "undefined") { separator_character_type = this.config.separator_character_type; }
+            switch (separator_character_type) {
                 case 2 /* Specific */:
                     return this.config.separator_character;
                 case 1 /* Random */:
-                    return this.getRandomArrayElement(this.config.separator_alphabet);
+                    return Generator.getRandomArrayElement(this.config.separator_alphabet);
                 case 0 /* None */:
                 default:
                     return "";
             }
         };
 
-        Generator.prototype.getPaddingCharacter = function () {
-            switch (this.config.padding_character_type) {
+        Generator.prototype.getPaddingCharacter = function (padding_character_type) {
+            if (typeof padding_character_type === "undefined") { padding_character_type = this.config.padding_character_type; }
+            switch (padding_character_type) {
                 case 3 /* Specific */:
                     return this.config.padding_character;
                 case 2 /* Separator */:
                     return this.getSeparator();
                 case 1 /* Random */:
-                    return this.getRandomArrayElement(this.config.symbol_alphabet);
+                    return Generator.getRandomArrayElement(this.config.symbol_alphabet);
                 case 0 /* None */:
                 default:
                     return "";
@@ -1694,18 +1751,45 @@ var TSXKP;
             var separator;
             var padding_char;
             var password;
+            var i;
 
             this.loader.load(function (error, dictionary) {
                 if (error) {
                     return callback(error);
                 }
 
-                words = _this.randomWords(_this.config.num_words, dictionary);
+                words = dictionary.random(_this.config.num_words);
                 words = _this.transformCase(words);
                 separator = _this.getSeparator();
                 padding_char = _this.getPaddingCharacter();
 
                 password = words.join(separator);
+
+                if (_this.config.padding_digits_before) {
+                    password = _this.getRandomDigits(_this.config.padding_digits_before) + separator + password;
+                }
+                if (_this.config.padding_digits_after) {
+                    password += separator + _this.getRandomDigits(_this.config.padding_digits_after);
+                }
+
+                switch (_this.config.padding_type) {
+                    case 2 /* Adaptive */:
+                        while (password.length < _this.config.pad_to_length) {
+                            password = padding_char + password;
+                        }
+                        if (password.length > _this.config.pad_to_length) {
+                            password = password.substr(0, _this.config.pad_to_length);
+                        }
+                        break;
+                    case 1 /* Fixed */:
+                        for (i = 0; i < _this.config.padding_characters_before; ++i) {
+                            password = padding_char + password;
+                        }
+                        for (i = 0; i < _this.config.padding_characters_after; ++i) {
+                            password += padding_char;
+                        }
+                        break;
+                }
 
                 console.log(password);
 

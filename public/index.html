@@ -3,14 +3,32 @@
 	<head>
 	</head>
 	<body>
+		<textarea id="passwords" rows="20" cols="60"></textarea>
+		<div>
+			<button type="button" id="generate">Generate</button>
+		</div>
+
+		<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
 		<script src="../build/javascript/tsxkp.js"></script>
 		<script>
-			var config = new TSXKP.Configs.AppleID();
-
-			config.case_transform = TSXKP.Configs.CaseTransform.Capitalise;
+			var config = new TSXKP.Configs.SimpleAppleID();
 
 			var loader = new TSXKP.Dictionaries.Loaders.SampleLoader(config);
 			var generator = new TSXKP.Generator(loader, config);
+
+
+			$(function () {
+				$("#generate").on("click", function () {
+					generator.generate(function (error, password) {
+						if (error) {
+							throw error;
+						}
+
+						$("#passwords").append(password + "\n");
+					});
+				});
+			});
+
 		</script>
 	</body>
 </html>

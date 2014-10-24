@@ -1,38 +1,77 @@
 module TSXKP {
 
+    /**
+     * @interface TSXKP.IGeneratorCallback
+     *
+     * Models a valid callback to a Generator.generate() call.
+     *
+     * @param {*}       error
+     * @param {string}  password
+     */
     export interface IGeneratorCallback {
         (error: any, password?: string): void;
     }
 
+    /**
+     * @interface TSXKP.IGenerator
+     */
     export interface IGenerator {
         generate (callback: IGeneratorCallback): IGenerator;
     }
 
+    /**
+     * @class TSXKP.Generator
+     */
     export class Generator implements IGenerator {
         private loader: TSXKP.Dictionaries.Loaders.ILoader;
         private config: TSXKP.Configs.IConfig;
 
+        /**
+         * @param {TSXKP.Dictionaries.Loaders.ILoader}      loader
+         * @param {TSXKP.Configs.IConfig}                   config
+         */
         constructor (loader: TSXKP.Dictionaries.Loaders.ILoader, config: TSXKP.Configs.IConfig) {
             this.config = config;
             this.loader = loader;
         }
 
 
-        private getRandomArrayElement<T> (array: T[]): T {
+        /**
+         * Selects a random element from an array.
+         *
+         * @param {T[]}     array
+         *
+         * @returns {T}
+         */
+        static getRandomArrayElement<T> (array: T[]): T {
             return array[Math.floor(Math.random() * array.length)];
         }
 
-        private randomWords (count: number, dictionary: TSXKP.Dictionaries.IDictionary): string[] {
-            var chosen: string[];
-            chosen = [];
-
-            while (chosen.length < count) {
-                chosen.push(dictionary.random());
+        /**
+         * Generates a string of random digits.
+         *
+         * @param {number}      length      Length of string to generate
+         *
+         * @returns {string}
+         */
+        private getRandomDigits (length: number): string {
+            var digits: string[];
+            var i: number;
+            for (digits = [], i = 0; i < length; ++i) {
+                digits.push(Generator.getRandomArrayElement<string>(TSXKP.Configs.SymbolAlphabets.Numbers));
             }
 
-            return chosen;
+            return digits.join("");
         }
 
+        /**
+         * Transforms a word based on the passed CaseTransform.
+         *
+         * @param {string}                      word
+         * @param {TSXKP.Configs.CaseTransform} case_transform
+         *
+         * @returns {string}
+         */
         private transformWordCase (word: string, case_transform: TSXKP.Configs.CaseTransform): string {
             switch (case_transform) {
                 case TSXKP.Configs.CaseTransform.Lower:
@@ -48,12 +87,21 @@ module TSXKP {
             }
         }
 
-        private transformCase (words: string[]): string[] {
+        /**
+         * Transforms an array of words based on the passed CaseTransform.
+         * Uses the current config's CaseTransform if none is passed.
+         *
+         * @param {string[]}                    words
+         * @param {TSXKP.Configs.CaseTransform} case_transform
+         *
+         * @returns {string[]}
+         */
+        private transformCase (words: string[], case_transform: TSXKP.Configs.CaseTransform = this.config.case_transform): string[] {
             var i: number;
             var l: number;
 
             for (i = 0, l = words.length; i < l; ++i) {
-                switch (this.config.case_transform) {
+                switch (case_transform) {
                     case TSXKP.Configs.CaseTransform.Alternate:
                         words[i] = this.transformWordCase(words[i], i % 2 === 0 ? TSXKP.Configs.CaseTransform.Lower : TSXKP.Configs.CaseTransform.Upper);
                         break;
@@ -69,38 +117,61 @@ module TSXKP {
             return words;
         }
 
-        private getSeparator (): string {
-            switch (this.config.separator_character_type) {
+        /**
+         * Selects a separator to use based on the passed SeparatorCharacterType.
+         * Uses the current config's SeparatorCharacterType if none is passed.
+         *
+         * @param {TSXKP.Configs.SeparatorCharacterType}    separator_character_type
+         *
+         * @returns {string}
+         */
+        private getSeparator (separator_character_type: TSXKP.Configs.SeparatorCharacterType = this.config.separator_character_type): string {
+            switch (separator_character_type) {
                 case TSXKP.Configs.SeparatorCharacterType.Specific:
                     return this.config.separator_character;
                 case TSXKP.Configs.SeparatorCharacterType.Random:
-                    return this.getRandomArrayElement<string>(this.config.separator_alphabet);
+                    return Generator.getRandomArrayElement<string>(this.config.separator_alphabet);
                 case TSXKP.Configs.SeparatorCharacterType.None:
                 default:
                     return "";
             }
         }
 
-        private getPaddingCharacter (): string {
-            switch (this.config.padding_character_type) {
+        /**
+         * Selects a character to use as padding based on the passed PaddingCharacterType.
+         * Uses the current config's PaddingCharacterType if none is passed.
+         *
+         * @param {TSXKP.Configs.PaddingCharacterType}    padding_character_type
+         *
+         * @returns {string}
+         */
+        private getPaddingCharacter (padding_character_type: TSXKP.Configs.PaddingCharacterType = this.config.padding_character_type): string {
+            switch (padding_character_type) {
                 case TSXKP.Configs.PaddingCharacterType.Specific:
                     return this.config.padding_character;
                 case TSXKP.Configs.PaddingCharacterType.Separator:
                     return this.getSeparator();
                 case TSXKP.Configs.PaddingCharacterType.Random:
-                    return this.getRandomArrayElement<string>(this.config.symbol_alphabet);
+                    return Generator.getRandomArrayElement<string>(this.config.symbol_alphabet);
                 case TSXKP.Configs.PaddingCharacterType.None:
                 default:
                     return "";
             }
         }
 
+        /**
+         * Generates a password based on the current configuration, and returns it to the passed callback. Chainable.
+         *
+         * @param {TSXKP.IGeneratorCallback}    callback
+         *
+         * @returns {TSXKP.Generator}
+         */
         public generate (callback: IGeneratorCallback): Generator {
-            //callback(undefined, "Hello, World!");
             var words: string[];
             var separator: string;
             var padding_char: string;
             var password: string;
+            var i: number;
 
             this.loader.load((error: any, dictionary: TSXKP.Dictionaries.IDictionary) => {
 
@@ -109,7 +180,7 @@ module TSXKP {
                 }
 
                 // Generate elements
-                words = this.randomWords(this.config.num_words, dictionary);
+                words = dictionary.random(this.config.num_words);
                 words = this.transformCase(words);
                 separator = this.getSeparator();
                 padding_char = this.getPaddingCharacter();
@@ -117,7 +188,35 @@ module TSXKP {
                 // Compile
                 password = words.join(separator);
 
+                // Add numbers
+                if (this.config.padding_digits_before) {
+                    password = this.getRandomDigits(this.config.padding_digits_before) + separator + password;
+                }
+                if (this.config.padding_digits_after) {
+                    password += separator + this.getRandomDigits(this.config.padding_digits_after);
+                }
 
+                // Add padding characters
+                switch (this.config.padding_type) {
+                    case TSXKP.Configs.PaddingType.Adaptive:
+
+                        // If password is too short
+                        while (password.length < this.config.pad_to_length) {
+                            password = padding_char + password;
+                        }
+                        if (password.length > this.config.pad_to_length) {
+                            password = password.substr(0, this.config.pad_to_length);
+                        }
+                        break;
+                    case TSXKP.Configs.PaddingType.Fixed:
+                        for (i = 0; i < this.config.padding_characters_before; ++i) {
+                            password = padding_char + password;
+                        }
+                        for (i = 0; i < this.config.padding_characters_after; ++i) {
+                            password += padding_char;
+                        }
+                        break;
+                }
 
                 console.log(password);
 

@@ -7,28 +7,31 @@ module TSXKP {
 
         export interface IDictionary {
             words: string[];
-            random (): string;
+            random (count: number): string[];
         }
 
         export class Dictionary implements IDictionary {
             public words: string[];
             private length: number;
-            public config: TSXKP.Configs.IConfig;
 
-            constructor (words: string[], config: TSXKP.Configs.IConfig) {
+            constructor (words: string[]) {
                 this.words = words;
                 this.length = words.length;
-                this.config = config;
             }
 
             public get (index: number): string {
                 return this.words[index];
             }
 
-            public random (): string {
-                var random: number[];
-                random = this.config.random_function(1);
-                return this.words[Math.floor(random[0] * this.length)];
+            public random (count: number): string[] {
+                var chosen: string[];
+                var i: number;
+
+                for (chosen = [], i = 0; i < count; ++i) {
+                    chosen.push(TSXKP.Generator.getRandomArrayElement<string>(this.words));
+                }
+
+                return chosen;
             }
         }
     }
